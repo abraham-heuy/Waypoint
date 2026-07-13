@@ -1,0 +1,92 @@
+import { useState, type FormEvent } from 'react';
+import type { AiChatMessage } from '../../types';
+import { sendAiChatMessage } from '../../lib/api';
+import { Card } from '../ui/primitives';
+import Button from '../ui/Button';
+import { useAuthStore } from '../../store/authStore';
+import { toast } from '../../store/toastStore';
+
+const STARTER: AiChatMessage = {
+  id: 'starter',
+  role: 'assistant',
+  content: "Tell me about your day — stops, deadlines, anything — and I'll optimize  it into a route.",
+  createdAt: new Date().toISOString(),
+};
+
+export default function AiAssistantPanel() {
+  const [messages, setMessages] = useState<AiChatMessage[]>([STARTER]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const spendCredit = useAuthStore((s) => s.spendCredit);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed || !user) return;
+
+    if (user.credits <= 0) {
+      toast.error('Out of credits — upgrade to keep using the assistant.');
+      return;
+    }
+
+    const userMsg: AiChatMessage = {
+      id: `msg_${Date.now()}`,
+      role: 'user',
+      content: trimmed,
+      createdAt: new Date().toISOString(),
+    };
+    const nextMessages = [...messages, userMsg];
+    setMessages(nextMessages);
+    setInput('');
+    setSending(true);
+
+    const result = await sendAiChatMessage(user.id, trimmed, nextMessages);
+    setSending(false);
+
+    if (result.ok && result.data) {
+      setMessages((prev) => [...prev, result.data as AiChatMessage]);
+      spendCredit(1);
+    } else {
+      toast.error('The assistant is unavailable right now. Try again shortly.');
+    }
+  }
+
+  return (
+    <Card className="p-5 flex flex-col h-[420px]">
+      <h3 className="text-sm font-semibold mb-3">Planning assistant</h3>
+      <div className="flex-1 overflow-y-auto space-y-3 mb-3 pr-1">
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={`text-xs leading-relaxed rounded-lg px-3 py-2.5 max-w-[85%] ${
+              m.role === 'user'
+                ? 'ml-auto bg-dispatch-accent text-[#1a1200]'
+                : 'bg-dispatch-panel2 text-dispatch-dim'
+            }`}
+          >
+            {m.content}
+          </div>
+        ))}
+        {sending && (
+          <div className="bg-dispatch-panel2 text-dispatch-dim text-xs rounded-lg px-3 py-2.5 max-w-[60%] flex gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-dispatch-dim animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-dispatch-dim animate-pulse [animation-delay:0.15s]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-dispatch-dim animate-pulse [animation-delay:0.3s]" />
+          </div>
+        )}
+      </div>
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="e.g. pharmacy, then groceries, then pick up Sam by 4"
+          className="flex-1 rounded-lg bg-dispatch-panel2 border border-dispatch-line px-3 py-2 text-xs outline-none focus:border-dispatch-accent"
+        />
+        <Button type="submit" size="sm" loading={sending} disabled={!input.trim()}>
+          Send
+        </Button>
+      </form>
+    </Card>
+  );
+}
