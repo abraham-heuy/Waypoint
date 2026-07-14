@@ -23,9 +23,16 @@ export default function LoginPage() {
     clearError();
     const ok = await login(email, password);
     if (ok) {
-      navigate(from, { replace: true });
+      // After login, check if user is superadmin
+      const user = useAuthStore.getState().user;
+      if (user?.isSuperadmin) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
     }
   }
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">

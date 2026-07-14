@@ -9,6 +9,8 @@ import type {
   PricingPlan,
   OnboardingAnswers,
   Stop,
+  TeamMember,      // new
+  BillingSummary,  // new
 } from '../types';
 import {
   MOCK_USER,
@@ -17,6 +19,8 @@ import {
   MOCK_PERFORMANCE,
   MOCK_ACTIVITY,
   PRICING_PLANS,
+  MOCK_TEAM,       // new – define in mockData.ts
+  MOCK_BILLING,    // new – define in mockData.ts
 } from './mockData';
 
 // ---------- Configuration ----------
@@ -24,7 +28,7 @@ const API_BASE = '/api';
 const REQUEST_TIMEOUT_MS = 8000;
 
 // ---------- Core request helper ----------
-async function request<T>(
+export async function request<T>(
   path: string,
   init?: RequestInit
 ): Promise<ApiResult<T>> {
@@ -55,7 +59,7 @@ async function request<T>(
   try {
     const resp = await fetch(`${API_BASE}${path}`, {
       ...init,
-      credentials: 'include', // ← critical for cookies
+      credentials: 'include',
       signal: controller.signal,
       headers,
     });
@@ -181,7 +185,6 @@ export async function refreshToken(): Promise<ApiResult<{ user: User }>> {
     const user = await delay({ ...MOCK_USER });
     return { ok: true, data: { user } };
   }
-  // The backend reads the refresh token from the cookie and returns new access token via cookie
   return request<{ user: User }>('/auth/refresh', { method: 'POST' });
 }
 
@@ -271,6 +274,54 @@ export async function upgradePlan(userId: string, planId: string): Promise<ApiRe
   };
 }
 
+// ---------- NEW: Fetch a specific route by id ----------
+export async function fetchRouteById(routeId: string): Promise<ApiResult<RoutePlan>> {
+  const real = await request<RoutePlan>(`/routes/${routeId}`);
+  if (real.ok) return real;
+  return { ok: true, data: await delay({ ...MOCK_ROUTE_PLAN, id: routeId }, 400) };
+}
+
+// ---------- NEW: Team (business accounts) ----------
+export async function fetchTeam(userId: string): Promise<ApiResult<TeamMember[]>> {
+  const real = await request<TeamMember[]>(`/users/${userId}/team`);
+  if (real.ok) return real;
+  return { ok: true, data: await delay(MOCK_TEAM, 450) };
+}
+
+// ---------- NEW: Update user profile ----------
+export async function updateUserProfile(
+  userId: string,
+  updates: Partial<Pick<User, 'name' | 'homeCity' | 'transportMode'>>
+): Promise<ApiResult<User>> {
+  const real = await request<User>(`/users/${userId}/profile`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+  if (real.ok) return real;
+  return { ok: true, data: await delay({ ...MOCK_USER, id: userId, ...updates }, 500) };
+}
+
+// ---------- NEW: Reset user data ----------
+export async function resetUserData(userId: string): Promise<ApiResult<{ success: true }>> {
+  const real = await request<{ success: true }>(`/users/${userId}/reset`, { method: 'POST' });
+  if (real.ok) return real;
+  return { ok: true, data: await delay({ success: true }, 600) };
+}
+
+// ---------- NEW: Billing summary ----------
+export async function fetchBillingSummary(userId: string): Promise<ApiResult<BillingSummary>> {
+  const real = await request<BillingSummary>(`/users/${userId}/billing`);
+  if (real.ok) return real;
+  return { ok: true, data: await delay(MOCK_BILLING, 400) };
+}
+
+// ---------- NEW: Cancel subscription ----------
+export async function cancelSubscription(userId: string): Promise<ApiResult<User>> {
+  const real = await request<User>(`/users/${userId}/billing/cancel`, { method: 'POST' });
+  if (real.ok) return real;
+  return { ok: true, data: await delay({ ...MOCK_USER, id: userId, tier: 'free' as const }, 500) };
+}
+
 // ---------- Rideshare ----------
 export async function fetchRideshareEstimate(
   fromLat: number,
@@ -287,4 +338,30 @@ export async function fetchRideshareEstimate(
     ok: true,
     data: await delay({ provider: 'uber', lowFare: 4.5, highFare: 7.2, etaMinutes: 6 }, 400),
   };
+}
+
+
+/**
+ * Submit a public partnership inquiry (used on the /partnerships page).
+ * This endpoint should be unauthenticated; it creates a pending partnership
+ * request in the backend for admin review.
+ */
+export async function submitPartnershipRequest(payload: {
+  companyName: string;
+  contactName?: string;
+  contactEmail: string;
+  message: string;
+  integrationType?: string;
+  callRequested?: boolean;
+  nature?: string;
+}): Promise<ApiResult<{ id: string }>> {
+  // If API_BASE is set, call real endpoint; else mock
+  if (!API_BASE) {
+    await delay(null, 800);
+    return { ok: true, data: { id: `part_mock_${Date.now()}` } };
+  }
+  return request<{ id: string }>('/partnerships/request', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }

@@ -10,34 +10,37 @@ function FullPageSpinner() {
   );
 }
 
+/** Requires the user to be logged in (any role). Redirects to login if not. */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const initialized = useAuthStore((s) => s.initialized);
   const location = useLocation();
 
-  if (!initialized) {
-    return <FullPageSpinner />;
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
-
+  if (!initialized) return <FullPageSpinner />;
+  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
   return <>{children}</>;
 }
 
+/** Alias for RequireAuth – used for routes that need a user but not necessarily onboarded. */
 export function RequireUserOnly({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const initialized = useAuthStore((s) => s.initialized);
   const location = useLocation();
 
-  if (!initialized) {
-    return <FullPageSpinner />;
-  }
+  if (!initialized) return <FullPageSpinner />;
+  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
+  return <>{children}</>;
+}
 
-  if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
+/** Requires the user to be logged in AND have the superadmin flag. */
+export function RequireSuperAdmin({ children }: { children: ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  const initialized = useAuthStore((s) => s.initialized);
+  const location = useLocation();
 
+  if (!initialized) return <FullPageSpinner />;
+  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
+  // If the user is logged in but not a superadmin, redirect to their dashboard.
+  if (!user.isSuperadmin) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }

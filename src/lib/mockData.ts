@@ -6,20 +6,22 @@ import type {
   ActivityItem,
   PricingPlan,
   Stop,
+  TeamMember,
+  BillingSummary,
 } from '../types';
 
 export const MOCK_USER: User = {
   id: 'usr_demo_1',
   name: 'Amina Otieno',
   email: 'amina@example.com',
-  segment: 'driver',
+  segment: 'solo',
   tier: 'free',
   credits: 12,
   avatarInitials: 'AO',
   createdAt: '2026-05-01T08:00:00Z',
   lastActiveAt: '2026-07-12T17:30:00Z',
   homeCity: 'Nairobi',
-  vehicleType: 'motorbike',
+  transportMode: 'car',
 };
 
 function stop(id: string, label: string, lat: number, lng: number, extra: Partial<Stop> = {}): Stop {
@@ -51,7 +53,7 @@ export const MOCK_ROUTE_PLAN: RoutePlan = {
   totalSeconds: 3600,
   totalMeters: 27600,
   roundTrip: true,
-  segment: 'driver',
+  segment: 'solo',
 };
 
 export const MOCK_INSIGHTS: AiInsight[] = [
@@ -90,6 +92,21 @@ export const MOCK_ACTIVITY: ActivityItem[] = [
   { id: 'a3', type: 'credit_used', message: 'Used 1 credit for route optimization', timestamp: '2026-07-12T09:05:00Z' },
   { id: 'a4', type: 'route_created', message: 'Created a new 6-stop route', timestamp: '2026-07-11T08:40:00Z' },
 ];
+
+export const MOCK_TEAM: TeamMember[] = [
+  { id: 'drv_1', name: 'James M.', status: 'on_route', stopsAssigned: 8, stopsCompleted: 5, onTimeRate: 0.96, activeRouteId: 'plan_demo_1' },
+  { id: 'drv_2', name: 'Grace W.', status: 'on_route', stopsAssigned: 6, stopsCompleted: 3, onTimeRate: 0.89, activeRouteId: 'plan_demo_1' },
+  { id: 'drv_3', name: 'Peter K.', status: 'finished', stopsAssigned: 5, stopsCompleted: 5, onTimeRate: 1.0 },
+];
+
+export const MOCK_BILLING: BillingSummary = {
+  tier: 'free',
+  creditsRemaining: 12,
+  history: [
+    { id: 'inv_1', date: '2026-06-13', description: 'Plus plan — June', amount: 6 },
+    { id: 'inv_2', date: '2026-05-13', description: 'Plus plan — May', amount: 6 },
+  ],
+};
 
 export const PRICING_PLANS: PricingPlan[] = [
   {

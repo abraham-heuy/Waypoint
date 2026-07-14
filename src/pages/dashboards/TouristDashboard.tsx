@@ -1,8 +1,6 @@
-import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/dashboard/DashboardLayout';
 import StatCard from '../../components/dashboard/StatCard';
-import RouteSummaryCard from '../../components/dashboard/RouteSummaryCard';
-import AiAssistantPanel from '../../components/dashboard/AiAssistantPanel';
+import RoutePlannerCard from '../../components/dashboard/RoutePlannerCard';
 import { Card } from '../../components/ui/primitives';
 import { useAuthStore } from '../../store/authStore';
 
@@ -14,7 +12,6 @@ const DAYS = [
 
 export default function TouristDashboard() {
   const user = useAuthStore((s) => s.user)!;
-  const navigate = useNavigate();
 
   return (
     <DashboardLayout>
@@ -30,9 +27,8 @@ export default function TouristDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 space-y-5">
-          <AiAssistantPanel />
-          <RouteSummaryCard userId={user.id} onPlanNew={() => navigate('/planner')} />
+        <div className="lg:col-span-2">
+          <RoutePlannerCard title="Today" loadExisting={false} />
         </div>
         <Card className="p-5">
           <h3 className="text-sm font-semibold mb-4">Trip overview</h3>
@@ -44,6 +40,10 @@ export default function TouristDashboard() {
               </li>
             ))}
           </ul>
+          <p className="text-[11px] text-dispatch-dim mt-4 pt-4 border-t border-dispatch-line leading-relaxed">
+            Multi-day planning (saving each day separately) needs a "day" field on saved routes —
+            see the API notes below for what that endpoint should look like.
+          </p>
         </Card>
       </div>
     </DashboardLayout>

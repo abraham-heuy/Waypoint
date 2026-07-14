@@ -28,8 +28,8 @@ export default function SignupPage() {
         <div className="inline-block text-xs font-mono uppercase tracking-widest text-dispatch-accent border border-dispatch-accentDim rounded-full px-3 py-1 mb-5">
           Free to start
         </div>
-        <h1 className="text-2xl font-bold mb-2">Let's set up your first route.</h1>
-        <p className="text-dispatch-dim text-sm mb-8">Takes about a minute. No card required.</p>
+        <h1 className="text-2xl font-bold mb-2">Let's set up your account first.</h1>
+        <p className="text-dispatch-dim text-sm mb-8">Takes about a minute.</p>
 
         {/* Error displayed at the top, yellow theme */}
         {error && (

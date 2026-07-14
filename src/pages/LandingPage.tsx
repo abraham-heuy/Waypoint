@@ -8,6 +8,7 @@ import AiWorkflowSection from '../components/landing/aiWorkflowSection';
 import AnimatedStats from '../components/landing/animatedStats';
 import TestimonialsSection from '../components/landing/testimonialsCard';
 import Button from '../components/ui/Button';
+import JezzaBot from '../components/landing/jezzabot';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -100,6 +101,9 @@ export default function LandingPage() {
 
       {/* Animated stats – at the very bottom, also with top border */}
       <section className="border-t border-dispatch-line"><AnimatedStats /></section>
+
+      <JezzaBot />
+
     </div>
   );
 }

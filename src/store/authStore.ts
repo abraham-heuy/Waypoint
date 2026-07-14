@@ -7,7 +7,7 @@ interface AuthState {
   user: User | null;
   onboarded: boolean;
   loading: boolean;
-  initialized: boolean;   // ← NEW
+  initialized: boolean;
   error: string | null;
   checkAuth: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
@@ -16,6 +16,7 @@ interface AuthState {
   submitOnboarding: (answers: OnboardingAnswers) => Promise<void>;
   spendCredit: (amount?: number) => void;
   setTier: (tier: User['tier']) => void;
+  updateUser: (patch: Partial<User>) => void;  // ← NEW
   clearError: () => void;
 }
 
@@ -23,7 +24,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   onboarded: false,
   loading: false,
-  initialized: false,   // ← NEW
+  initialized: false,
   error: null,
 
   checkAuth: async () => {
@@ -46,7 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (e) {
       set({ user: null, onboarded: false });
     } finally {
-      set({ loading: false, initialized: true });   // ← mark done
+      set({ loading: false, initialized: true });
     }
   },
 
@@ -121,6 +122,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const current = get().user;
     if (!current) return;
     const updated = { ...current, tier };
+    set({ user: updated });
+  },
+
+  // NEW: Update user state in memory
+  updateUser: (patch) => {
+    const current = get().user;
+    if (!current) return;
+    const updated = { ...current, ...patch };
     set({ user: updated });
   },
 

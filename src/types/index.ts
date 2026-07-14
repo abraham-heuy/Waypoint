@@ -1,7 +1,7 @@
 export type UserSegment = 'solo' | 'field_team' | 'delivery' | 'enterprise';
 
 export type PlanTier = 'free' | 'plus' | 'pro' | 'business';
-
+export type TransportMode = 'own_vehicle' | 'rideshare' | 'mixed' | 'walking';
 export interface User {
   id: string;
   name: string;
@@ -13,7 +13,10 @@ export interface User {
   createdAt: string;
   lastActiveAt: string;
   homeCity?: string;
-  transportMode: 'car' | 'bike' | 'motorbike' | 'on_foot' | 'none';
+  /** @deprecated use transportMode — kept optional for older mock data */
+  vehicleType?: 'car' | 'bike' | 'motorbike' | 'on_foot' | 'none';
+  transportMode?: TransportMode;
+  isSuperadmin?: boolean;
 }
 
 export interface Stop {
@@ -26,7 +29,7 @@ export interface Stop {
   windowEnd?: string;
   notes?: string;
   status?: 'pending' | 'done' | 'skipped';
-  eta?: string
+  eta?: string | Date;  
 }
 
 export interface RouteLeg {
@@ -57,9 +60,13 @@ export interface RoutePlan {
   totalCostEstimate?: number;
   roundTrip: boolean;
   segment: UserSegment;
-  geometry?: {
-    coordinates: [number, number][]; // [lng, lat]
-  };
+  /** Real road-following polyline, [lng, lat] pairs (GeoJSON convention),
+   * as returned by the routing engine (e.g. OSRM). Falls back to straight
+   * lines between ordered stops on the client if omitted. */
+  geometry?: { type: 'LineString'; coordinates: [number, number][] };
+  /** Set when this plan belongs to a driver on a business/team account. */
+  driverId?: string;
+  driverName?: string;
 }
 
 export interface AiInsight {
@@ -74,7 +81,12 @@ export interface AiChatMessage {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+  /** Present on an assistant message when it successfully parsed stops out
+   * of the conversation. The UI shows these as a proposal the person can
+   * accept before they're written onto the map/route. */
+  parsedStops?: Stop[];
 }
+
 
 export interface PerformanceScore {
   onTimeRate: number; // 0-1
@@ -109,6 +121,24 @@ export interface OnboardingAnswers {
   stops_per_day: number | null;  
   transport_mode: 'car' | 'bike' | 'walk' | 'van' | 'public_transit' | null;
   team_size: number | null;       
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  status: 'on_route' | 'finished' | 'idle';
+  stopsAssigned: number;
+  stopsCompleted: number;
+  onTimeRate: number; // 0-1
+  activeRouteId?: string;
+}
+
+export interface BillingSummary {
+  tier: PlanTier;
+  renewsOn?: string; // ISO date, absent for free tier
+  paymentMethodLast4?: string;
+  creditsRemaining: number | 'unlimited';
+  history: { id: string; date: string; description: string; amount: number }[];
 }
 /** Generic wrapper every real endpoint should return, so the client can
  * treat success/error/loading uniformly regardless of which route it hit. */
