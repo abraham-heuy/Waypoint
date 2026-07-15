@@ -368,34 +368,10 @@ export interface PaymentStats {
   recentPayments: PaymentRecord[];
 }
 
-// Mock function for payment stats (combines real data with aggregation)
-export function fetchPaymentStats(): Promise<ApiResult<PaymentStats>> {
-  // Generate 30 days of mock revenue
-  const revenueByDay = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date(Date.now() - (29 - i) * 86400000).toISOString().slice(0, 10);
-    const amountCents = Math.floor(Math.random() * 50000) + 5000;
-    return { date, amountCents };
-  });
 
-  const mock: PaymentStats = {
-    totalRevenueCents: revenueByDay.reduce((s, d) => s + d.amountCents, 0),
-    totalPayments: 542,
-    avgPaymentCents: 3200,
-    successRate: 0.92,
-    revenueByDay,
-    statusBreakdown: [
-      { status: 'succeeded', count: 500, totalCents: 1500000 },
-      { status: 'failed', count: 30, totalCents: 90000 },
-      { status: 'pending', count: 12, totalCents: 36000 },
-    ],
-    providerBreakdown: [
-      { provider: 'stripe', count: 400, totalCents: 1200000 },
-      { provider: 'paypal', count: 100, totalCents: 300000 },
-      { provider: 'other', count: 42, totalCents: 126000 },
-    ],
-    recentPayments: [], // will be filled from real data
-  };
-  return Promise.resolve({ ok: true, data: mock });
+//payment stats
+export function fetchPaymentStats(days = 30): Promise<ApiResult<PaymentStats>> {
+  return request<PaymentStats>(`/admin/payments/stats?days=${days}`);
 }
 
 // Reconfigure payment settings (mock)
@@ -431,9 +407,8 @@ export interface PartnershipRequest {
   contactEmail: string;
   message: string | null;
   integrationType: string | null;
+  callRequested: boolean;
+  nature: string | null;
   status: string;
   createdAt: string;
-  // Additional fields for UI (backend may not have these yet, but we mock them)
-  nature?: string; // short description of collaboration
-  callRequested?: boolean; // checkbox for "I need a short call"
 }

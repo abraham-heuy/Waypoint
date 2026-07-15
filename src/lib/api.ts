@@ -221,25 +221,22 @@ export async function optimizeRoute(
   };
 }
 
-// ---------- AI (kept as mock) ----------
+// AI fetch insights
 export async function fetchInsights(routeId: string): Promise<ApiResult<AiInsight[]>> {
+  const real = await request<AiInsight[]>(`/routes/${routeId}/insights`);
+  if (real.ok) return real;
   return { ok: true, data: await delay(MOCK_INSIGHTS, 450) };
 }
-
 export async function sendAiChatMessage(
   userId: string,
   message: string,
   history: AiChatMessage[]
 ): Promise<ApiResult<AiChatMessage>> {
   if (!message.trim()) return { ok: false, error: 'empty_message' };
-  const reply: AiChatMessage = {
-    id: `msg_${Date.now()}`,
-    role: 'assistant',
-    content:
-      "I'm running in demo mode right now (no AI endpoint connected yet), but here's what I'd normally do: break your message into stops, check opening hours and time windows, then hand it to the optimizer. Once VITE_API_BASE_URL is set, I'll respond for real.",
-    createdAt: new Date().toISOString(),
-  };
-  return { ok: true, data: await delay(reply, 600) };
+  return request<AiChatMessage>('/ai/chat', {
+    method: 'POST',
+    body: JSON.stringify({ userId, message, history }),
+  });
 }
 
 // ---------- Analytics / profile ----------
@@ -303,7 +300,10 @@ export async function updateUserProfile(
 
 // ---------- NEW: Reset user data ----------
 export async function resetUserData(userId: string): Promise<ApiResult<{ success: true }>> {
-  const real = await request<{ success: true }>(`/users/${userId}/reset`, { method: 'POST' });
+  const real = await request<{ success: true }>(`/users/${userId}/reset`, {
+    method: 'POST',
+    body: JSON.stringify({ confirm: true }),
+  });
   if (real.ok) return real;
   return { ok: true, data: await delay({ success: true }, 600) };
 }
